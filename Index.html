@@ -1,1 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aria's Tech & Brews - Order Online</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
 
+  <!-- Navigation -->
+  <nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <i data-lucide="coffee" class="w-6 h-6 text-indigo-600"></i>
+        <span class="font-bold text-xl tracking-tight text-slate-900">Tech & Brews</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <button id="cart-btn" class="relative bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-lg font-medium transition flex items-center gap-2">
+          <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+          <span>Cart</span>
+          <span id="cart-count" class="bg-indigo-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="bg-indigo-600 text-white py-12 px-4 text-center">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-3xl sm:text-4xl font-extrabold mb-3">Brewed Fresh for Your Code Sessions</h1>
+      <p class="text-indigo-100 text-base sm:text-lg">Select your favorite drinks and snacks, customize your order, and simulate online checkout in real-time!</p>
+    </div>
+  </section>
+
+  <!-- Main Content: Menu & Order Summary -->
+  <main class="max-w-6xl mx-auto px-4 py-8 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    
+    <!-- Menu Grid (2 Columns on large screens) -->
+    <section class="lg:col-span-2">
+      <h2 class="text-xl font-bold mb-4 text-slate-900 flex items-center gap-2">
+        <i data-lucide="utensils" class="w-5 h-5 text-indigo-600"></i> Menu Items
+      </h2>
+      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Dynamic Menu Cards will be inserted here via JS -->
+      </div>
+    </section>
+
+    <!-- Cart / Order Summary Panel -->
+    <section class="bg-white p-6 rounded-xl border border-slate-200 h-fit shadow-sm">
+      <h2 class="text-xl font-bold mb-4 text-slate-900 flex items-center gap-2">
+        <i data-lucide="receipt" class="w-5 h-5 text-indigo-600"></i> Order Summary
+      </h2>
+      
+      <div id="cart-items" class="space-y-3 max-h-64 overflow-y-auto divide-y divide-slate-100">
+        <!-- Dynamic Cart Items -->
+        <p id="empty-cart-msg" class="text-slate-400 text-sm text-center py-6">Your cart is empty.</p>
+      </div>
+
+      <div class="border-t border-slate-200 mt-4 pt-4 space-y-2">
+        <div class="flex justify-between text-sm text-slate-600">
+          <span>Subtotal</span>
+          <span id="subtotal">₱0.00</span>
+        </div>
+        <div class="flex justify-between text-sm text-slate-600">
+          <span>Tax (12%)</span>
+          <span id="tax">₱0.00</span>
+        </div>
+        <div class="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-100">
+          <span>Total</span>
+          <span id="total" class="text-indigo-600">₱0.00</span>
+        </div>
+      </div>
+
+      <button id="checkout-btn" disabled class="w-full mt-6 bg-indigo-600 disabled:bg-slate-300 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition disabled:cursor-not-allowed">
+        Proceed to Checkout
+      </button>
+    </section>
+
+  </main>
+
+  <!-- Checkout Success Modal -->
+  <div id="checkout-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-xl">
+      <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900">Order Confirmed!</h3>
+      <p class="text-slate-600 text-sm mt-1">Thank you for your order. Your drinks are being prepared!</p>
+      <button id="close-modal-btn" class="mt-5 w-full bg-slate-900 text-white font-medium py-2 rounded-lg hover:bg-slate-800 transition">
+        Close & Reset
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // Sample Menu Data
+    const menuItems = [
+      { id: 1, name: "Espresso Cold Brew", category: "Coffee", price: 120, icon: "coffee" },
+      { id: 2, name: "Matcha Oat Latte", category: "Tea", price: 150, icon: "cup-soda" },
+      { id: 3, name: "Caramel Macchiato", category: "Coffee", price: 160, icon: "coffee" },
+      { id: 4, name: "Butter Croissant", category: "Pastry", price: 85, icon: "sandwich" },
+      { id: 5, name: "Chocolate Muffin", category: "Pastry", price: 95, icon: "cookie" },
+      { id: 6, name: "Iced Milk Tea", category: "Tea", price: 110, icon: "cup-soda" }
+    ];
+
+    let cart = [];
+
+    // DOM Elements
+    const menuGrid = document.getElementById('menu-grid');
+    const cartItemsContainer = document.getElementById('cart-items');
+    const emptyCartMsg = document.getElementById('empty-cart-msg');
+    const cartCountEl = document.getElementById('cart-count');
+    const subtotalEl = document.getElementById('subtotal');
+    const taxEl = document.getElementById('tax');
+    const totalEl = document.getElementById('total');
+    const checkoutBtn = document.getElementById('checkout-btn');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+
+    // Render Menu Cards
+    function renderMenu() {
+      menuGrid.innerHTML = menuItems.map(item => `
+        <div class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col justify-between hover:shadow-md transition">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">${item.category}</span>
+              <h3 class="font-bold text-slate-900 mt-1">${item.name}</h3>
+            </div>
+            <span class="font-bold text-slate-800">₱${item.price.toFixed(2)}</span>
+          </div>
+          <button onclick="addToCart(${item.id})" class="w-full bg-slate-900 hover:bg-indigo-600 text-white text-sm font-medium py-2 rounded-lg transition flex items-center justify-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add to Order
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // Add Item to Cart
+    window.addToCart = function(id) {
+      const item = menuItems.find(m => m.id === id);
+      const existing = cart.find(c => c.id === id);
+
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        cart.push({ ...item, quantity: 1 });
+      }
+      updateCartUI();
+    };
+
+    // Update Quantity
+    window.updateQuantity = function(id, delta) {
+      const item = cart.find(c => c.id === id);
+      if (item) {
+        item.quantity += delta;
+        if (item.quantity <= 0) {
+          cart = cart.filter(c => c.id !== id);
+        }
+      }
+      updateCartUI();
+    };
+
+    // Update Cart UI & Totals
+    function updateCartUI() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCountEl.textContent = totalItems;
+
+      if (cart.length === 0) {
+        cartItemsContainer.innerHTML = `<p id="empty-cart-msg" class="text-slate-400 text-sm text-center py-6">Your cart is empty.</p>`;
+        checkoutBtn.disabled = true;
+        subtotalEl.textContent = '₱0.00';
+        taxEl.textContent = '₱0.00';
+        totalEl.textContent = '₱0.00';
+        return;
+      }
+
+      checkoutBtn.disabled = false;
+
+      cartItemsContainer.innerHTML = cart.map(item => `
+        <div class="flex justify-between items-center pt-3 text-sm">
+          <div>
+            <p class="font-medium text-slate-800">${item.name}</p>
+            <p class="text-slate-400 text-xs">₱${item.price} x ${item.quantity}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="updateQuantity(${item.id}, -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">-</button>
+            <span class="font-semibold text-slate-800">${item.quantity}</span>
+            <button onclick="updateQuantity(${item.id}, 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold">+</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Math calculations
+      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const tax = subtotal * 0.12;
+      const total = subtotal + tax;
+
+      subtotalEl.textContent = `₱${subtotal.toFixed(2)}`;
+      taxEl.textContent = `₱${tax.toFixed(2)}`;
+      totalEl.textContent = `₱${total.toFixed(2)}`;
+
+      // Re-initialize Lucide Icons for dynamic content
+      lucide.createIcons();
+    }
+
+    // Checkout Flow
+    checkoutBtn.addEventListener('click', () => {
+      checkoutModal.classList.remove('hidden');
+      checkoutModal.classList.add('flex');
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      cart = [];
+      updateCartUI();
+      checkoutModal.classList.add('hidden');
+      checkoutModal.classList.remove('flex');
+    });
+
+    // Initial Load
+    renderMenu();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
